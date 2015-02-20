@@ -1,0 +1,101 @@
+Variable names consist of a letter followed by any number of letters, digits or underscore.
+
+MATLAB is case-sensitive.
+% - comment
+Row vectors - r = [7 8 9 10 11];
+Column vector - c = [7;  8;  9;  10; 11];
+Matrix - m = [1 2 3; 4 5 6; 7 8 9];
+clc 	Clears command window.
+clear 	Removes variables from memory.
+exist	Checks for existence of file or variable.
+who(s) - display all variables declared
+help	Searches for a help topic.
+disp 	Displays contents of an array or string.
+fscanf 	Read formatted data from a file.
+format	Controls screen-display format.
+fprintf	Performs formatted writes to screen or file.
+input	Displays prompts and waits for input.
+;	Suppresses screen printing.
+cat 	Concatenates arrays.
+find 	Finds indices of nonzero elements.
+length 	Computes number of elements.
+linspace 	Creates regularly spaced vector.
+logspace 	Creates logarithmically spaced vector.
+max 	Returns largest element.
+min 	Returns smallest element.
+prod 	Product of each column.
+reshape 	Changes size.
+size 	Computes array size.
+sort 	Sorts each column.
+sum 	Sums each column.
+eye 	Creates an identity matrix.
+ones 	Creates an array of ones.
+zeros 	Creates an array of zeros.
+cross 	Computes matrix cross products.
+dot 	Computes matrix dot products.
+det	Computes determinant of an array.
+inv 	Computes inverse of a matrix.
+pinv 	Computes pseudoinverse of a matrix.
+rank 	Computes rank of a matrix.
+rref 	Computes reduced row echelon form.
+cell 	Creates cell array.
+celldisp 	Displays cell array.
+cellplot 	Displays graphical representation of cell array.
+num2cell 	Converts numeric array to cell array.
+deal 	Matches input and output lists.
+iscell 	Identifies cell array.
+PLOT ---------------------------------
+axis 	Sets axis limits.
+fplot 	Intelligent plotting of functions.
+grid 	Displays gridlines.
+plot 	Generates xy plot.
+print 	Prints plot or saves plot to a file.
+title 	Puts text at top of plot.
+xlabel 	Adds text label to x-axis.
+ylabel 	Adds text label to y-axis.
+axes 	Creates axes objects.
+close 	Closes the current plot.
+close all 	Closes all plots.
+figure 	Opens a new figure window.
+gtext 	Enables label placement by mouse.
+hold 	Freezes current plot.
+legend 	Legend placement by mouse.
+refresh 	Redraws current figure window.
+set 	Specifies properties of objects such as axes.
+subplot 	Creates plots in subwindows.
+text 	Places string in figure.
+bar 	Creates bar chart.
+loglog 	Creates log-log plot.
+polar 	Creates polar plot.
+semilogx 	Creates semilog plot. (logarithmic abscissa).
+semilogy 	Creates semilog plot. (logarithmic ordinate).
+stairs 	Creates stairs plot.
+stem 	Creates stem plot.
+
+OPERATORS-----------------
++	Addition or unary plus. A+B adds A and B. A and B must have the same size, unless one is a scalar. A scalar can be added to a matrix of any size.
+-	Subtraction or unary minus. A-B subtracts B from A. A and B must have the same size, unless one is a scalar. A scalar can be subtracted from a matrix of any size.
+*	Matrix multiplication. C = A*B is the linear algebraic product of the matrices A and B. More precisely,
+
+Matrix Multiplication
+
+For nonscalar A and B, the number of columns of A must equal the number of rows of B. A scalar can multiply a matrix of any size.
+.*	Array multiplication. A.*B is the element-by-element product of the arrays A and B. A and B must have the same size, unless one of them is a scalar.
+/	Slash or matrix right division. B/A is roughly the same as B*inv(A). More precisely, B/A = (A'\B')'.
+./	Array right division. A./B is the matrix with elements A(i,j)/B(i,j). A and B must have the same size, unless one of them is a scalar.
+\	Backslash or matrix left division. If A is a square matrix, A\B is roughly the same as inv(A)*B, except it is computed in a different way. If A is an n-by-n matrix and B is a column vector with n components, or a matrix with several such columns, then X = A\B is the solution to the equation AX = B. A warning message is displayed if A is badly scaled or nearly singular.
+.\	Array left division. A.\B is the matrix with elements B(i,j)/A(i,j). A and B must have the same size, unless one of them is a scalar.
+^	Matrix power. X^p is X to the power p, if p is a scalar. If p is an integer, the power is computed by repeated squaring. If the integer is negative, X is inverted first. For other values of p, the calculation involves eigenvalues and eigenvectors, such that if [V,D] = eig(X), then X^p = V*D.^p/V.
+.^	Array power. A.^B is the matrix with elements A(i,j) to the B(i,j) power. A and B must have the same size, unless one of them is a scalar.
+'	Matrix transpose. A' is the linear algebraic transpose of A. For complex matrices, this is the complex conjugate transpose.
+.'	Array transpose. A.' is the array transpose of A. For complex matrices, this does not involve conjugation.
+
+Operator	Description
+< 	Less than
+<= 	Less than or equal to
+> 	Greater than
+>= 	Greater than or equal to
+== 	Equal to
+~= 	Not equal to
+
+http://www.tutorialspoint.com/matlab/matlab_operators.htm

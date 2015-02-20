@@ -1,0 +1,480 @@
+*
+This function is trying find 5 finger candidates for each hand 
+*/
+void find_fingers(struct HandStructure *HandStructure)
+{
+	int n;
+	int i;
+	CvPoint *points;
+	CvPoint max_point;
+	int dist1 = 0, dist2 = 0;
+	int finger_distance[NUM_FINGERS + 1];
+	HandStructure->num_fingers_left = 0;
+
+	if (!HandStructure->contour_left )
+		return;
+
+	n = HandStructure->contour_left->total;
+	points = (CvPoint*)calloc(n, sizeof(CvPoint));
+    
+	/* convert contour to array, so that each element can be accessed easily */
+	cvCvtSeqToArray(HandStructure->contour_left, points, CV_WHOLE_SEQ);
+	/*
+	 * Fingers are detected as points where the distance to the center
+	 * is a local maximum
+	 */
+	for (i = 0; i < n; i++) 
+	{
+		int dist;
+		int cx = HandStructure->hand_center_left.x;
+		int cy = HandStructure->hand_center_left.y;
+
+		dist = (cx - points[i].x) * (cx - points[i].x) +
+		    (cy - points[i].y) * (cy - points[i].y);
+
+		if (dist < dist1 && dist1 > dist2 && max_point.x != 0
+		    && max_point.y < cvGetSize(HandStructure->image).height - 10)
+		{
+
+			finger_distance[HandStructure->num_fingers_left] = dist;
+			HandStructure->fingers_left[HandStructure->num_fingers_left++] = max_point;
+			if (HandStructure->num_fingers_left >= NUM_FINGERS + 1)
+				break;
+		}
+
+		dist2 = dist1;
+		dist1 = dist;
+		max_point = points[i];
+	}
+	free(points);
+	return;
+}
+/* End of function find_fingers() */
+
+
+/* 
+Complicated function for finding fingers, using calculations for angle between points from the contour
+*/
+void find_fingers2(HandStructure *Hand)
+{
+       	int n;
+	int i;
+	int i_koetoDaBaram = 0;
+	
+	CvPoint *points_left = NULL, *points_right = NULL;
+	CvPoint max_point_left, max_point_right;
+	int dist1 = 0, dist2 = 0;
+	double finger_distance_left[100];
+	double finger_distance_right[100];
+	int FingerovBroqch = 0;
+	HandStructure->num_fingers_left = 0;
+	HandStructure->num_fingers_right = 0;
+
+	//HandStructure->fingers_left = NULL;
+	//HandStructure->fingers_right = NULL;
+	int cx = HandStructure->hand_center_left.x;
+	int cy = HandStructure->hand_center_left.y;
+
+	int countFingers = 0;
+	CvPoint *fingersleft = (CvPoint*)calloc(500, sizeof(CvPoint));
+	CvPoint *fingersRight = (CvPoint*)calloc(500, sizeof(CvPoint));
+
+	if (!HandStructure->contour_left_forFingers )
+		return;
+
+	// Process the left hand
+	n = HandStructure->contour_left_forFingers->total;
+	if( n == 0 ) return;
+	points_left = (CvPoint*)calloc(n, sizeof(CvPoint));
+
+	/* convert contour to array, so that each element can be accessed easily */
+	cvCvtSeqToArray(HandStructure->contour_left_forFingers, points_left, CV_WHOLE_SEQ);
+	/*
+	 * ///Fingers are detected as points where the distance to the center
+	 * ///is a local maximum
+	 */
+	
+	for (i = 0; i < n; i++) 
+	{
+		double dist_strana1, dist_strana2, dist_strana3;
+		int position1, position2;
+		int side_x = 0,  side_y = 0;
+		float cosAlfa = 0;
+		float ygyl_Alfa = 0;
+		
+		/* computing the first side of the triangle */
+		position1 = i - STEP_CALC_FINGER_DETECTION;
+		if(i < STEP_CALC_FINGER_DETECTION) { position1 = n-1 + i - STEP_CALC_FINGER_DETECTION;  }
+		if(position1 >=n || position1 < 0) continue;
+
+		if(points_left[position1].x < 0 || points_left[position1].y < 0) continue;
+		side_x = abs(points_left[i].x - points_left[position1].x);
+		side_y = abs(points_left[i].y - points_left[position1].y);
+		dist_strana1 = sqrt((long double)(pow((long double)side_x,2) + pow((long double)side_y,2)));
+
+		/* computing the second side of the triangle */
+		position2 = i + STEP_CALC_FINGER_DETECTION;
+		if(i + STEP_CALC_FINGER_DETECTION >= n) { position2 = STEP_CALC_FINGER_DETECTION +1 - n + i; }
+		
+		if(position2 >=n || position2<0) continue;
+		if(points_left[position2].x < 0 || points_left[position2].y < 0) continue;
+		side_x = abs(points_left[i].x - points_left[position2].x);
+		side_y = abs(points_left[i].y - points_left[position2].y);
+		dist_strana2 = sqrt((long double)(pow((long double)side_x,2) + pow((long double)side_y,2)));
+
+		/* computing the third side of the triangle */
+		side_x = abs(points_left[position1].x - points_left[position2].x);
+		side_y = abs(points_left[position1].y - points_left[position2].y);
+		dist_strana3 = sqrt((long double)(pow((long double)side_x,2) + pow((long double)side_y,2)));
+		
+		/* Cosinus Theorem for finding the angle at the vertex of the triangle in point 'i' */ 
+		cosAlfa = (pow(dist_strana1,2) + pow(dist_strana2,2) - pow(dist_strana3,2))/(2*dist_strana1*dist_strana2);
+		ygyl_Alfa = acos(cosAlfa)*180/3.1415927;
+
+		/* The angle compared with alfa should be determined with Euristics */
+		if(ygyl_Alfa < 80 )
+		{
+			if(!(points_left[i].x <= 0))
+			{
+				if(!(points_left[i].y) <= 0)
+				{
+					fingersleft[countFingers++] = points_left[i];
+					i+=STEP_DETECT_NEXT_FINGER;
+				}
+			}
+		} 
+	}
+
+	int side_x, side_y;
+	double dist;
+	
+	for(i = 0; i <100; i++)
+	{
+		finger_distance_left[i] = 0;
+	}
+
+	for(i = 0; i < countFingers; i++)
+	{
+		/* computing a distance between each point in array to the center. We are interested in the first five (biggest) results */
+		side_x = abs(cx - fingersleft[i].x); 
+		side_y = abs(cy - fingersleft[i].y);
+		dist = sqrt((long double)(pow((long double)side_x,2),pow((long double)side_y,2)));
+		finger_distance_left[i] = dist;
+	}
+	if(countFingers!=0) qsort(finger_distance_left,countFingers, sizeof(finger_distance_left[0]), cmp);
+
+	for(i = 0; i < countFingers; i++){
+		side_x = abs(cx - fingersleft[i].x);
+		side_y = abs(cy - fingersleft[i].y); 
+		dist = sqrt((long double)(pow((long double)side_x,2),pow((long double)side_y,2)));
+		
+		if(dist == finger_distance_left[0]) { HandStructure->fingers_left[0] = fingersleft[i]; FingerovBroqch++; }
+			if(dist == finger_distance_left[1]){ HandStructure->fingers_left[1] = fingersleft[i]; FingerovBroqch++; }  
+			if(dist == finger_distance_left[2]){ HandStructure->fingers_left[2] = fingersleft[i]; FingerovBroqch++; }  
+			if(dist == finger_distance_left[3]){ HandStructure->fingers_left[3] = fingersleft[i]; FingerovBroqch++; }  
+			if(dist == finger_distance_left[4]){ HandStructure->fingers_left[4] = fingersleft[i]; FingerovBroqch++; }  
+	}
+	if(points_left!=NULL) free(points_left);
+
+	HandStructure->num_fingers_left = FingerovBroqch;
+	/* End of Left hand processing */
+
+	if (!HandStructure->contour_right_forFingers)
+		return;	
+	n = 0;
+	i = 0;
+	dist1 = 0;
+	dist2 = 0;
+
+	/* Process the right hand */
+	n = HandStructure->contour_right_forFingers->total;
+
+	cx = HandStructure->hand_center_right.x;
+	cy = HandStructure->hand_center_right.y;
+	points_right = (CvPoint*)calloc(n, sizeof(CvPoint));
+
+	/* convert contour to array, so that each element can be accessed easily */
+	cvCvtSeqToArray(HandStructure->contour_right_forFingers, points_right, CV_WHOLE_SEQ);
+	countFingers = 0;
+	FingerovBroqch = 0;
+	for (i = 0; i < n; i++)
+	{
+		double dist_strana1 = 0, dist_strana2 = 0, dist_strana3 = 0;
+		int position1, position2;
+		int side_x=0,  side_y=0;
+		float cosAlfa=0;
+		float ygyl_Alfa=0;
+		
+		/* computing the first side of the triangle */
+		position1 = i - STEP_CALC_FINGER_DETECTION;
+		if(i < STEP_CALC_FINGER_DETECTION) position1 = n-1 + i - STEP_CALC_FINGER_DETECTION;
+		if(position1 >=n || position1 <0) continue;
+		if(points_right[position1].x < 0 || points_right[position1].y < 0) continue;
+		side_x = abs(points_right[i].x - points_right[position1].x);
+		if(side_x < 0) continue;
+
+		side_y = abs(points_right[i].y - points_right[position1].y);
+		if(side_y < 0) continue;
+		dist_strana1 = sqrt((long double)(pow((long double)side_x,2) + pow((long double)side_y,2)));
+		if(dist_strana1 <= 0) continue;
+
+		/* computing the second side of the triangle */
+		position2 = i + STEP_CALC_FINGER_DETECTION;
+		if(i + STEP_CALC_FINGER_DETECTION >= n) position2 = STEP_CALC_FINGER_DETECTION - n + i+1;
+		
+		if(position2 >=n || position2 <0) continue;
+		if(points_right[position2].x < 0 || points_right[position2].y < 0) continue;
+		side_x = abs(points_right[i].x - points_right[position2].x);
+		if(side_x < 0) continue;
+		
+		side_y = abs(points_right[i].y - points_right[position2].y);
+		if(side_y < 0) continue;
+		dist_strana2 = sqrt((long double)(pow((long double)side_x,2) + pow((long double)side_y,2)));
+		if(dist_strana2 <= 0) continue;
+
+		/* computing the third side of the triangle */
+		side_x = abs(points_right[position1].x - points_right[position2].x);
+		if(side_x < 0) continue;
+		
+		side_y = abs(points_right[position1].y - points_right[position2].y);
+		if(side_y < 0) continue;
+		dist_strana3 = sqrt((long double)(pow((long double)side_x,2) + pow((long double)side_y,2)));
+		if(dist_strana3 <= 0) continue;
+		
+		/* Cosinus Theorem for finding the angle at the vertex of the triangle in point 'i' */ 
+		cosAlfa = (pow(dist_strana1,2) + pow(dist_strana2,2) - pow(dist_strana3,2))/(2*dist_strana1*dist_strana2);
+		ygyl_Alfa = acos(cosAlfa)*180/3.1415927;
+
+		/* The angle compared with alfa should be determined with Euristics */
+		if(ygyl_Alfa < 80 )
+		{
+			if(!(points_right[i].x <= 0))
+			{
+				if(!(points_right[i].y) <= 0)
+				{
+					fingersRight[countFingers++] = points_right[i];
+					i+=STEP_DETECT_NEXT_FINGER;
+				}
+			}
+		}
+	}
+	
+	for(i = 0; i <100; i++)
+	{
+		finger_distance_right[i] = 0;
+	}
+	for(i = 0; i < countFingers; i++)
+	{
+		/* computing a distance between each point in array to the center. We are interested in the first five (biggest) results */
+		side_x = abs(cx - fingersRight[i].x);
+		side_y = abs(cy - fingersRight[i].y);
+		dist = sqrt((long double)(pow((long double)side_x,2),pow((long double)side_y,2)));
+		finger_distance_right[i] = dist;
+	}
+	if(countFingers!=0) qsort(finger_distance_right,countFingers, sizeof(finger_distance_right[0]), cmp);
+
+	for(i = 0; i < countFingers; i++)
+	{
+		side_x = abs(cx - fingersRight[i].x);
+		side_y = abs(cy - fingersRight[i].y);
+		dist = sqrt((long double)(pow((long double)side_x,2),pow((long double)side_y,2)));
+		if(dist == finger_distance_right[0]) { HandStructure->fingers_right[0] = fingersRight[i]; FingerovBroqch++;}
+			if(dist == finger_distance_right[1]) { HandStructure->fingers_right[1] = fingersRight[i]; FingerovBroqch++;}
+			if(dist == finger_distance_right[2]) { HandStructure->fingers_right[2] = fingersRight[i]; FingerovBroqch++;}
+			if(dist == finger_distance_right[3]) { HandStructure->fingers_right[3] = fingersRight[i]; FingerovBroqch++;}
+			if(dist == finger_distance_right[4]) { HandStructure->fingers_right[4] = fingersRight[i]; FingerovBroqch++;}
+	}
+	HandStructure->num_fingers_right = FingerovBroqch;
+
+	if(points_right!=NULL) free(points_right);
+	/* end of processing right hand */
+
+	return;
+}
+/* End of function find_fingers2() */
+
+
+
+
+//C# implementation
+
+
+class Hand
+{
+  static const scanningDistance = 20;
+  static const compareAngleDEG = 80;
+
+  Dictionary mapFingerToPressedKey = new Dictionary<int, int>(); 
+  bool isLeftHand = false;
+  Point centerOfThePalm;
+public:
+  Point [] fingerTipPosition;
+  Point [] handContour;
+  
+  Hand()
+  {
+    mapFingerToPressedKey.Add(0,0);
+    mapFingerToPressedKey.Add(1,0);
+    mapFingerToPressedKey.Add(2,0);
+    mapFingerToPressedKey.Add(3,0);
+    mapFingerToPressedKey.Add(4,0);
+  }
+
+  void FindFingerTipPosition();
+}
+
+
+  double calculateSide1(Point [] contourPoints, int i, int calcStep, out int position1)
+  {
+    position1 = 0;
+    int n = contourPoints.Count();
+
+	position1 = i - calcStep;
+	if(i < STEP_CALC_FINGER_DETECTION) { position1 = n-1 + i - calcStep;  }
+	if(position1 >=n || position1 < 0) position1 = 0;
+
+	int side_x = contourPoints[i].x - contourPoints[position1].x;
+	int side_y = contourPoints[i].y - contourPoints[position1].y;
+
+        return Math.Sqrt((side_x * side_x) + ((side_y * side_y)));
+  }
+
+double calculateSide2(Point [] contourPoints, int i, int calcStep, out int position2)
+  {
+    position2 = 0;
+    int n = contourPoints.Count();
+
+	position2 = i - calcStep;
+	if(i < STEP_CALC_FINGER_DETECTION) { position2 = STEP_CALC_FINGER_DETECTION +1 - n + i; }
+	if(position2 >=n || position2 < 0) position2 = 0;
+
+	int side_x = contourPoints[i].x - contourPoints[position2].x;
+	int side_y = contourPoints[i].y - contourPoints[position2].y;
+
+        return Math.Sqrt((side_x * side_x) + ((side_y * side_y)));
+  }
+
+
+double calculateSide3(Point [] contourPoints, int position1, int position2)
+{
+        int side_x = contourPoints[position1].x - contourPoints[position2].x;
+	int side_y = contourPoints[position1].y - contourPoints[position2].y;
+	
+	return Math.Sqrt((side_x * side_x) + ((side_y * side_y)));
+}
+
+int FindMinimumIndex(int [] arr, int numbers)
+{
+  int min = 1000000;
+  int minIndex = 0;
+  for(int i = 0; i < numbers; i++)
+  {
+    if(arr[i] < min)
+      {
+	min = arr[i];
+	minIndex = i;
+      }
+  }
+  return minIndex;
+}
+
+bool CheckIfNumberIsBiggerThanArray(int [] arr, int numbers, int numberToCheck)
+{
+  bool isBigger = false;
+  for(int i = 0; i < numbers; i++)
+    {
+      if(arr[i] < numberToCheck)
+	{
+	  isBigger = true;
+	  break;
+	}
+    }
+  return isBigger;
+}
+
+Point [] CalculateBiggestDistancePoints(Point [] currentPoints, int numberOfPoints, int maxNumberOfPoints, Point center)
+{
+    int cx = center.X;
+    int cy = center.Y;
+
+    int []biggestDistances  = new int[5];
+    for(int i =0; i< 5; i++) biggestDistances[i] = 0;
+    
+    int distX = 0;
+    int distY = 0;
+    for(int i = 0; i < numberOfPoints; i++)
+    {
+      distX = cx - currentPoint[i].X;
+      distY = cy - currentPoint[i].Y;
+      int curDistance = (int)(0.5 + Math.Sqrt((distX * distX) + (distY * distY));
+      if(isBigger(biggestDistances, 5, curDistance]) == true)
+	{
+	  biggestDistances[FindMinimumIndex(biggestDistances, 5)] = curDistance;
+	}
+    }
+    
+    var pointFingerTips = new Point [5];
+    int tipsCounter = 0;
+    for(int i = 0; i < numberOfPoints; i++)
+      {
+	distX = cx - currentPoint[i].X;
+	distY = cy - currentPoint[i].Y;
+	int curDistance = (int)(0.5 + Math.Sqrt((distX * distX) + (distY * distY));
+	
+	if(curDistance == biggestDistances[0] || curDistance == biggestDistances[1] || curDistance == biggestDistances[2]
+	  || curDistance == biggestDistances[3] || curDistance == biggestDistances[4])
+	{
+	   pointFingerTips[tipsCounter++] = currentPoint[i];
+	}
+	if(tipsCounter >= 5)
+	{
+	   break;
+        }
+      }
+    return pointFingerTips;
+}
+
+double CosinusTheorem(double distSide1, double distSide2, double distSide3)
+{
+  /* Cosinus Theorem for finding the angle at the vertex of the triangle in point 'i' */ 
+       double cosAlfa = (distSide1 * distSide1) + (distSide2 * distSide2) - (distSide3 * distSide3))/(2*dist_strana1*dist_strana2);
+       return Math.Acos(cosAlfa)*180/3.1415927;
+}
+
+Hand::FindFingerTipPosition()
+{
+  //var fingerTipPoints = new Point[5];
+    var fingerTipCandidates = new Point[100];
+    int calcStep = scanningDistance;
+    int compareAngle = compareAngleDEG;
+    int contourPointsCount = handContour.Count();
+    int numberOfCandidates = 0;
+
+    for(int i = 0; i < contourPointsCount; i++)
+    {
+      int position1;
+      double distSide1 = calculateSide1(handContour, i, calcStep, out position1);
+      int position2;
+      double distSide2 = calculateSide2(handContour, i, calcStep, out position2);
+      double distSide3 = calculateSide3(handContour, position1, position2);
+
+      double alfaAngle = CosinusTheorem(distSide1, distSide2, distSide3);
+      
+      if(alfaAngle < compareAngle)
+      {
+	fingerTipCandidates[numberOfCandidates++] = Hand->handContour[i];  //TODO moje bi ne se kopira
+      }
+    }
+
+    //get those 5 points which are most away from the center of the palm
+ 
+    fingerTipPosition = CalculateBiggestDistancePoints(fingerTipCandidates, numberOfCandidates, 5, Hand->centerOfThePalm);
+}
+
+bool isKeyPressed(Point)
+{
+    // compare point from color and depth and take decision.
+
+  //convert point -> using 3D warp affine -> to real world coordinates -> to depth coordinates
+  //take decision.. based on the Center point depth...maybe
+}

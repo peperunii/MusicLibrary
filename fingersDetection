@@ -1,0 +1,181 @@
+
+
+
+//C# implementation
+
+
+class Hand
+{
+  static const scanningDistance = 20;
+  static const compareAngleDEG = 80;
+
+  Dictionary mapFingerToPressedKey = new Dictionary<int, int>(); 
+  bool isLeftHand = false;
+  Point centerOfThePalm;
+  
+  Point [] fingerTipPosition;
+  Point [] handContour;
+  
+  Hand()
+  {
+    mapFingerToPressedKey.Add(0,0);
+    mapFingerToPressedKey.Add(1,0);
+    mapFingerToPressedKey.Add(2,0);
+    mapFingerToPressedKey.Add(3,0);
+    mapFingerToPressedKey.Add(4,0);
+  }
+}
+
+
+  double calculateSide1(Point [] contourPoints, int i, int calcStep, out int position1)
+  {
+    position1 = 0;
+    int n = contourPoints.Count();
+
+	position1 = i - calcStep;
+	if(i < STEP_CALC_FINGER_DETECTION) { position1 = n-1 + i - calcStep;  }
+	if(position1 >=n || position1 < 0) position1 = 0;
+
+	int side_x = contourPoints[i].x - contourPoints[position1].x;
+	int side_y = contourPoints[i].y - contourPoints[position1].y;
+
+        return Math.Sqrt((side_x * side_x) + ((side_y * side_y)));
+  }
+
+double calculateSide2(Point [] contourPoints, int i, int calcStep, out int position2)
+  {
+    position2 = 0;
+    int n = contourPoints.Count();
+
+	position2 = i - calcStep;
+	if(i < STEP_CALC_FINGER_DETECTION) { position2 = STEP_CALC_FINGER_DETECTION +1 - n + i; }
+	if(position2 >=n || position2 < 0) position2 = 0;
+
+	int side_x = contourPoints[i].x - contourPoints[position2].x;
+	int side_y = contourPoints[i].y - contourPoints[position2].y;
+
+        return Math.Sqrt((side_x * side_x) + ((side_y * side_y)));
+  }
+
+
+double calculateSide3(Point [] contourPoints, int position1, int position2)
+{
+        int side_x = contourPoints[position1].x - contourPoints[position2].x;
+	int side_y = contourPoints[position1].y - contourPoints[position2].y;
+	
+	return Math.Sqrt((side_x * side_x) + ((side_y * side_y)));
+}
+
+int FindMinimumIndex(int [] arr, int numbers)
+{
+  int min = 1000000;
+  int minIndex = 0;
+  for(int i = 0; i < numbers; i++)
+  {
+    if(arr[i] < min)
+      {
+	min = arr[i];
+	minIndex = i;
+      }
+  }
+  return minIndex;
+}
+
+bool CheckIfNumberIsBiggerThanArray(int [] arr, int numbers, int numberToCheck)
+{
+  bool isBigger = false;
+  for(int i = 0; i < numbers; i++)
+    {
+      if(arr[i] < numberToCheck)
+	{
+	  isBigger = true;
+	  break;
+	}
+    }
+  return isBigger;
+}
+
+Point [] CalculateBiggestDistancePoints(Point [] currentPoints, int numberOfPoints, int maxNumberOfPoints, Point center)
+{
+    int cx = center.X;
+    int cy = center.Y;
+
+    int []biggestDistances  = new int[5];
+    for(int i =0; i< 5; i++) biggestDistances[i] = 0;
+    
+    int distX = 0;
+    int distY = 0;
+    for(int i = 0; i < numberOfPoints; i++)
+    {
+      distX = cx - currentPoint[i].X;
+      distY = cy - currentPoint[i].Y;
+      int curDistance = (int)(0.5 + Math.Sqrt((distX * distX) + (distY * distY));
+      if(isBigger(biggestDistances, 5, curDistance]) == true)
+	{
+	  biggestDistances[FindMinimumIndex] = curDistance;
+	}
+    }
+    
+    var pointFingerTips = new Point [5];
+    int tipsCounter = 0;
+    for(int i = 0; i < numberOfPoints; i++)
+      {
+	distX = cx - currentPoint[i].X;
+	distY = cy - currentPoint[i].Y;
+	int curDistance = (int)(0.5 + Math.Sqrt((distX * distX) + (distY * distY));
+	
+	if(curDistance == biggestDistances[0] || curDistance == biggestDistances[1] || curDistance == biggestDistances[2]
+	  || curDistance == biggestDistances[3] || curDistance == biggestDistances[4])
+	{
+	   pointFingerTips[tipsCounter++] = currentPoint[i];
+	}
+	if(tipsCounter >= 5)
+	{
+	   break;
+        }
+      }
+    return pointFingerTips;
+}
+
+double CosinusTheorem(double distSide1, double distSide2, double distSide3)
+{
+  /* Cosinus Theorem for finding the angle at the vertex of the triangle in point 'i' */ 
+       double cosAlfa = (distSide1 * distSide1) + (distSide2 * distSide2) - (distSide3 * distSide3))/(2*dist_strana1*dist_strana2);
+       return Math.Acos(cosAlfa)*180/3.1415927;
+}
+
+Point [] FindFingerTipPosition(Hand *Hand)
+{
+  //var fingerTipPoints = new Point[5];
+    var fingerTipCandidates = new Point[100];
+    int calcStep = Hand->scanningDistance;
+    int compareAngle = Hand->compareAngleDEG;
+    int contourPointsCount = Hand->handContour.Count();
+    int numberOfCandidates = 0;
+
+    for(int i = 0; i < contourPointsCount; i++)
+    {
+      int position1;
+      double distSide1 = calculateSide1(Hand->handContour, i, calcStep, out position1);
+      int position2;
+      double distSide2 = calculateSide2(Hand->handContour, i, calcStep, out position2);
+      double distSide3 = calculateSide3(Hand->handContour, position1, position2);
+
+      double alfaAngle = CosinusTheorem(distSide1, distSide2, distSide3);
+      
+      if(alfaAngle < compareAngle)
+      {
+	fingerTipCandidates[numberOfCandidates++] = Hand->handContour[i];  //TODO moje bi ne se kopira
+      }
+    }
+
+    //get those 5 points which are most away from the center of the palm
+ 
+    return CalculateBiggestDistancePoints(fingerTipCandidates, numberOfCandidates, 5, Hand->centerOfThePalm);
+}
+
+bool isKeyPressed(Point)
+{
+    // compare point from color and depth and take decision.
+}
+
